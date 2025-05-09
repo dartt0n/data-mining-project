@@ -22,9 +22,7 @@ object Main {
 
     sc.hadoopConfiguration.set("fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")
     sc.hadoopConfiguration.set("fs.s3a.endpoint", "s3.yandexcloud.net")
-    sc.hadoopConfiguration.set("fs.s3a.access_key", sys.env("S3A_ACCESS_KEY"))
-    sc.hadoopConfiguration.set("fs.s3a.secret_key", sys.env("S3A_SECRET_KEY"))
-
+  
     spark.read
       .parquet("s3a://openalex/openalex")
       .select(F.col("authors"), F.col("id") as "work")
