@@ -1,0 +1,17 @@
+.venv
+.bsp
+.scala-build
+.DS_Store
+.vscode
+.idea
+.metals
+*.json
+*.csv
+*.parquet
+*.png
+*.zip
+*.pem
+distributed/run_client.sh
+sample
+.env
+*.txt

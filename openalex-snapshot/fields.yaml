@@ -1,0 +1,165 @@
+fields:
+  work_id:
+    desc: "ID of work on OpenAlex"
+    type: string
+    path: id
+
+  doi:
+    desc: "DOI of the work"
+    type: string
+    path: doi
+
+  title:
+    desc: "Title of the work"
+    type: string
+    path: title
+
+  date:
+    desc: "Publication date"
+    type: string
+    path: publication_date
+
+  authors:
+    desc: "Authors of this work"
+    type: list
+    path: authorships
+    map:
+      struct:
+        id:
+          desc: "ID of author on OpenAlex"
+          type: string
+          path: author.id
+
+        name:
+          desc: "Name of author on OpenAlex"
+          type: string
+          path: author.display_name
+
+        raw_name:
+          desc: "Raw string of authors name"
+          type: string
+          path: raw_author_name
+
+        country_codes:
+          desc: "Countries of author on OpenAlex"
+          type: list
+          path: countries
+          map:
+            field:
+              desc: "Country code of institution on OpenAlex"
+              type: string
+              path: ""
+
+        institutions:
+          desc: "Institutions of author on OpenAlex"
+          type: list
+          path: institutions
+          map:
+            struct:
+              id:
+                desc: "ID of institution on OpenAlex"
+                type: string
+                path: id
+
+              name:
+                desc: "Name of institution on OpenAlex"
+                type: string
+                path: display_name
+
+              country_code:
+                desc: "Country code of institution on OpenAlex"
+                type: string
+                path: country_code
+
+  concepts:
+    desc: "Concepts of this work"
+    type: list
+    path: concepts
+    map:
+      struct:
+        id:
+          desc: "ID of concept on OpenAlex"
+          type: string
+          path: id
+
+        name:
+          desc: "Name of concept on OpenAlex"
+          type: string
+          path: display_name
+
+        score:
+          desc: "Score of concept on OpenAlex"
+          type: float
+          path: score
+
+  topics:
+    desc: "Topics of this work"
+    type: list
+    path: topics
+    map:
+      struct:
+        id:
+          desc: "ID of topic on OpenAlex"
+          type: string
+          path: id
+
+        name:
+          desc: "Name of topic on OpenAlex"
+          type: string
+          path: display_name
+
+        domain:
+          desc: "Domain of topic on OpenAlex"
+          type: string
+          path: domain.display_name
+
+        field:
+          desc: "Field of topic on OpenAlex"
+          type: string
+          path: field.display_name
+
+  referenced_works:
+    desc: "Referenced works IDs of this work"
+    type: list
+    path: referenced_works
+    map:
+      field:
+        desc: "Referenced works IDs of this work"
+        type: string
+        path: ""
+
+  related_works:
+    desc: "Related works IDs of this work"
+    path: related_works
+    type: list
+    map:
+      field:
+        desc: "Related works IDs of this work"
+        type: string
+        path: ""
+
+  keywords:
+    desc: "Keywords of this work"
+    type: list
+    path: keywords
+    map:
+      field:
+        desc: "Keywords of this work"
+        type: string
+        path: display_name
+
+  citations:
+    desc: "Counts of this work by year"
+    type: list
+    path: counts_by_year
+    map:
+      struct:
+        year:
+          desc: "Year of citation"
+          type: int
+          path: year
+
+        count:
+          desc: "Count of citation"
+          type: int
+          path: cited_by_count

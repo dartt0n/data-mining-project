@@ -1,0 +1,12 @@
+services:
+  server:
+    build:
+      dockerfile_inline: |
+        FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim
+        ADD distributed-server.py .
+        ENTRYPOINT ["uv", "run", "distributed-server.py"]
+
+    ports:
+      - "127.0.0.1:10509:8080"
+
+    restart: no
