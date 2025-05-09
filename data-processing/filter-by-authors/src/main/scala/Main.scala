@@ -21,9 +21,20 @@ object Main {
     val sc = spark.sparkContext
 
     sc.hadoopConfiguration.set("fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")
-    sc.hadoopConfiguration.set("fs.s3a.endpoint", "s3.yandexcloud.net")
 
-    val selector = spark.read
+    sc.hadoopConfiguration.set("fs.s3a.endpoint", "storage.yandexcloud.net");
+    sc.hadoopConfiguration.set("fs.s3a.path.style.access", "true")
+    sc.hadoopConfiguration.set("fs.s3a.connection.ssl.enabled", "true")
+    sc.hadoopConfiguration.set("fs.s3a.signing-algorithm", "");
+    
+    sc.hadoopConfiguration.set("fs.s3a.committer.magic.enabled", "true")
+    sc.hadoopConfiguration.set("fs.s3a.connection.maximum", "50")
+
+    sc.hadoopConfiguration.set("fs.s3a.aws.credentials.provider", "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider")
+
+    val sql = new org.apache.spark.sql.SQLContext(sc)
+
+    val selector = sql.read
       .parquet("s3a://dataprocdata/authors-works")
       .select(F.col("work"))
 
