@@ -47,8 +47,9 @@ root
  */
 
 object Main {
-  implicit class ColumnHelper(val sc: StringContext) extends AnyVal {
-    def c(args: Any*): Column = F.col(sc.s(args))
+  def handleException(e: Exception): Unit = {
+    println("Error occurred: " + e.getMessage)
+    e.printStackTrace()
   }
 
   def main(args: Array[String]): Unit = {
@@ -69,73 +70,130 @@ object Main {
     sc.hadoopConfiguration.set("fs.s3a.committer.magic.enabled", "true")
     sc.hadoopConfiguration.set("fs.s3a.connection.maximum", "50")
 
-    sc.hadoopConfiguration.set("fs.s3a.aws.credentials.provider", "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider")
+    sc.hadoopConfiguration.set(
+      "fs.s3a.aws.credentials.provider",
+      "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider"
+    )
 
     val df = spark.read
       .parquet("s3a://dataprocdata/openalex-rich")
 
-    df.select(F.count("*") as "size")
-      .write.mode("overwrite").parquet("s3a://openalex/rich-sample-1-stats/dataset_size")
+    try {
+      df.select(F.count("*") as "size")
+        .write
+        .mode("overwrite")
+        .parquet("s3a://openalex/rich-sample-1-stats/dataset_size")
+    } catch {
+      case e: Exception => handleException(e)
+    }
 
-    df.select(F.explode(F.col("authors")) as "author")
-      .select(F.countDistinct(F.col("author.id")) as "authors")
-      .write.mode("overwrite").parquet("s3a://openalex/rich-sample-1-stats/unique_authors")
+    try {
+      df.select(F.explode(F.col("authors")) as "author")
+        .select(F.countDistinct(F.col("author.id")) as "authors")
+        .write
+        .mode("overwrite")
+        .parquet("s3a://openalex/rich-sample-1-stats/unique_authors")
 
-    df.select(F.countDistinct(F.col("id")) as "works")
-      .write.mode("overwrite").parquet("s3a://openalex/rich-sample-1-stats/unique_works")
+    } catch {
+      case e: Exception => handleException(e)
+    }
 
-    df.select(F.array_sort(F.transform(F.col("authors"), c => c.getField("id"))) as "team")
-      .select(F.countDistinct(F.col("team")) as "teams")
-      .write.mode("overwrite").parquet("s3a://openalex/rich-sample-1-stats/unique_teams")
+    try {
+      df.select(F.countDistinct(F.col("id")) as "works")
+        .write
+        .mode("overwrite")
+        .parquet("s3a://openalex/rich-sample-1-stats/unique_works")
+    } catch {
+      case e: Exception => handleException(e)
+    }
 
-    df.select(F.explode(F.col("country_codes")) as "country")
-      .groupBy(F.col("country"))
-      .agg(F.count("*") as "works")
-      .sort(F.col("works"))
-      .write.mode("overwrite").parquet("s3a://openalex/rich-sample-1-stats/works_by_country")
+    try {
+      df.select(F.array_sort(F.transform(F.col("authors"), c => c.getField("id"))) as "team")
+        .select(F.countDistinct(F.col("team")) as "teams")
+        .write
+        .mode("overwrite")
+        .parquet("s3a://openalex/rich-sample-1-stats/unique_teams")
+    } catch {
+      case e: Exception => handleException(e)
+    }
 
-    df.select(F.explode(F.col("concepts")) as "concept")
-      .groupBy(F.col("concept"))
-      .agg(F.count("*") as "works")
-      .sort(F.col("works"))
-      .write.mode("overwrite").parquet("s3a://openalex/rich-sample-1-stats/works_by_concept")
+    try {
+      df.select(F.explode(F.col("authors")) as "author")
+        .select(F.explode(F.col("author.institutions")) as "institution")
+        .select(F.col("institution.country") as "country")
+        .groupBy(F.col("country"))
+        .agg(F.count("*") as "works")
+        .sort(F.col("works"))
+        .write
+        .mode("overwrite")
+        .parquet("s3a://openalex/rich-sample-1-stats/works_by_country")
+    } catch {
+      case e: Exception => handleException(e)
+    }
 
-    df.select(
-        F.col("id"),
+    try {
+      df.select(F.explode(F.col("concepts")) as "concept")
+        .select(F.col("concept.name") as "concept")
+        .groupBy(F.col("concept"))
+        .agg(F.count("*") as "works")
+        .sort(F.col("works"))
+        .write
+        .mode("overwrite")
+        .parquet("s3a://openalex/rich-sample-1-stats/works_by_concept")
+    } catch {
+      case e: Exception => handleException(e)
+    }
+
+    try {
+      df.select(
         F.when(
           F.size(F.col("citations")) > 0,
           F.element_at(F.col("citations"), F.size(F.col("citations")) - 1).getField("count")
         ).otherwise(F.lit(0)) as "citation_count"
-      )
-      .groupBy(F.col("id"))
-      .agg(F.max(F.col("citation_count")))
-      .select(
-        F.max(F.col("citation_count")) as "max",
-        F.min(F.col("citation_count")) as "min",
-        F.mean(F.col("citation_count")) as "avg",
-        F.stddev(F.col("citation_count")) as "std",
-      )
-      .write.mode("overwrite").parquet("s3a://openalex/rich-sample-1-stats/citations")
+      ).write
+        .mode("overwrite")
+        .parquet("s3a://openalex/rich-sample-1-stats/citations-distribution")
+    } catch {
+      case e: Exception => handleException(e)
+    }
 
-    df.select(F.col("primary_topic").getField("name") as "topic")
-      .groupBy(F.col("topic"))
-      .agg(F.count("*") as "works")
-      .sort(F.col("works"))
-      .write.mode("overwrite").parquet("s3a://openalex/rich-sample-1-stats/works_by_topic")
+    try {
+      df.select(F.col("primary_topic_flat") as "topic")
+        .groupBy(F.col("topic"))
+        .agg(F.count("*") as "works")
+        .sort(F.col("works"))
+        .write
+        .mode("overwrite")
+        .parquet("s3a://openalex/rich-sample-1-stats/works_by_topic")
+    } catch {
+      case e: Exception => handleException(e)
+    }
 
-    val g = df.sample(1000 / df.count())
+    try {
+      val g = df
+        .sample(1000 / df.count())
         .select(F.col("id") as "work", F.explode(F.col("authors")).getField("id") as "author")
 
-    g.select(F.col("work"))
-      .distinct()
-      .write.mode("overwrite").parquet("s3a://openalex/rich-sample-1-stats/graph/works")
+      g.select(F.col("work"))
+        .distinct()
+        .write
+        .mode("overwrite")
+        .parquet("s3a://openalex/rich-sample-1-stats/graph/works")
 
-    g.select(F.col("author"))
-      .distinct()
-      .write.mode("overwrite").parquet("s3a://openalex/rich-sample-1-stats/graph/authors")
+      g.select(F.col("author"))
+        .distinct()
+        .write
+        .mode("overwrite")
+        .parquet("s3a://openalex/rich-sample-1-stats/graph/authors")
 
-    g.select(F.col("work"), F.col("author"))
-      .distinct()
-      .write.mode("overwrite").parquet("s3a://openalex/rich-sample-1-stats/graph/edges")
+      g.select(F.col("work"), F.col("author"))
+        .distinct()
+        .write
+        .mode("overwrite")
+        .parquet("s3a://openalex/rich-sample-1-stats/graph/edges")
+    } catch {
+      case e: Exception => handleException(e)
+    }
+
   }
 }
