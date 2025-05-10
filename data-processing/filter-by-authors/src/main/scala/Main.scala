@@ -39,10 +39,20 @@ object Main {
       .select(F.col("work"))
 
     spark.read
-      .parquet("s3a://openalex/openalex")
-      .join(selector, F.col("id") === F.col("work"), "left")
+      .parquet("s3a://dataprocdata/preprocessed_sample_v1")
+      .join(selector, F.col("id") === F.col("work"), "inner")
       .write
       .mode("overwrite")
-      .parquet("s3a://dataprocdata/openalex-rich")
+      .option("compression", "snappy")
+      .parquet("s3a://dataprocdata/openalex-rich-1")
+
+    spark.read
+      .parquet("s3a://openalex/openalex")
+      .sample(fraction=0.05)
+      .join(selector, F.col("id") === F.col("work"), "inner")
+      .write
+      .mode("overwrite")
+      .option("compression", "snappy")
+      .parquet("s3a://dataprocdata/openalex-rich-5")
   }
 }
